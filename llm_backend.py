@@ -13,7 +13,7 @@ def generate_sql_query(user_input):
     """
     try:
         # Configure API key
-        genai.configure(api_key="AIzaSyBxo86CAx8HIB9K1resMQYHqvtjIEv592M")
+        genai.configure(api_key="")
         
         # Initialize the model with system instruction
         model = genai.GenerativeModel(
