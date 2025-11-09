@@ -168,6 +168,10 @@ def run_llm_query():
 
     if database_needed:
         results = execute_query(sql_query)  # your existing DB executor
+
+        print(":::::::::::ACTUAL RESULT FROM DATABASE::::::")
+        print(results)
+
         if results is None:
             return jsonify({'error': 'Database error occurred'}), 500
 
@@ -202,12 +206,23 @@ def run_llm_query():
 
         if (sufficient == False) and (database_needed == True):
 
+            if (sufficient == False) and (results == []):
+                return enriched_response
+
+
+
             print(":::::::::: INTERSECTION ::::::::::::::OUTPUT")
             intersection = find_csv_intersection_from_strings(enriched_response["results"],csv_output,threshold=70 )
             print(intersection)
 
+
+            if intersection == '':
+                return enriched_response
+
+
+
         # The handler returns JSON — you forward it directly
-        return enriched_response
+        return intersection
 
 
 
