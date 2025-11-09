@@ -1,14 +1,16 @@
 import psycopg2
 
+
 def execute_query(query):
     """
-    Execute a SQL query and return results.
-    
+    Execute a SQL query and return results as list of dictionaries.
+
     Args:
         query (str): SQL query to execute
-    
+
     Returns:
-        list: Query results as list of tuples, or None if error
+        list[dict]: Query results, where each row is a dict with column names as keys.
+                    Returns None if an error occurs.
     """
     # Database credentials
     HOST = "localhost"
@@ -16,10 +18,10 @@ def execute_query(query):
     DATABASE = "postgres"
     USER = "postgres"
     PASSWORD = "postgres"
-    
+
     connection = None
     cursor = None
-    
+
     try:
         # Connect to database
         connection = psycopg2.connect(
@@ -29,42 +31,46 @@ def execute_query(query):
             user=USER,
             password=PASSWORD
         )
-        
+
         # Create cursor
         cursor = connection.cursor()
-        
-        # Execute query
+
+        # Execute the query
         cursor.execute(query)
-        
-        # Fetch results
-        results = cursor.fetchall()
-        
+
+        # Fetch column names from cursor description
+        column_names = [desc[0] for desc in cursor.description]
+
+        # Fetch all rows and convert them into list of dicts
+        rows = cursor.fetchall()
+        results = [dict(zip(column_names, row)) for row in rows]
+
         return results
-        
+
     except psycopg2.Error as e:
         print(f"Database error: {e}")
         return None
-        
+
     except Exception as e:
         print(f"Error: {e}")
         return None
-        
+
     finally:
-        # Close cursor and connection
+        # Always close the cursor and connection
         if cursor:
             cursor.close()
         if connection:
             connection.close()
 
-# Example usage
+
+# Example usage (for testing only)
 if __name__ == "__main__":
-    # Test the function
-    query = "SELECT * FROM information_schema.tables LIMIT 5;"
+    query = "SELECT table_schema, table_name FROM information_schema.tables LIMIT 5;"
     results = execute_query(query)
-    
+
     if results:
         print(f"Query executed successfully. Found {len(results)} rows.")
-        for i, row in enumerate(results, 1):
-            print(f"Row {i}: {row}")
+        for row in results:
+            print(row)
     else:
-        print("No results or error occurred")
+        print("No results or error occurred.")

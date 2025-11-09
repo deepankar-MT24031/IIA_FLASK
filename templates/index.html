@@ -8,7 +8,7 @@
         body {
             margin: 0;
             height: 100vh;
-            background-color: #dcdcdc; /* Light grey background */
+            background-color: #dcdcdc;
             color: #222;
             font-family: "Segoe UI", Arial, sans-serif;
             display: flex;
@@ -67,9 +67,20 @@
             padding: 10px;
             overflow-y: auto;
             font-size: 15px;
+            white-space: pre-wrap;  /* Changed from 'pre' to 'pre-wrap' */
+            word-wrap: break-word;   /* Add this for extra safety */
+            font-family: monospace;
         }
 
-        /* ✅ Updated textarea (multi-line input box) */
+        /* ✅ EASIEST FIX: Limit pre height & enable scrolling */
+        .chat-messages pre {
+            max-height: 60vh;     /* prevents chat resizing */
+            overflow: auto;        /* scroll instead of expand */
+            display: block;
+            white-space: pre-wrap; /* allow wrapping */
+            word-break: break-word;/* wrap long lines */
+        }
+
         .chat-input {
             border: 1px solid #bbb;
             border-radius: 12px;
@@ -79,8 +90,8 @@
             box-sizing: border-box;
             font-size: 15px;
             background-color: white;
-            resize: none; /* disable manual resize handle */
-            height: 70px; /* increased height */
+            resize: none;
+            height: 70px;
             line-height: 1.4;
         }
 
@@ -117,7 +128,7 @@
     <script>
         const leftInput = document.getElementById('leftInput');
         const rightInput = document.getElementById('rightInput');
-        
+
         // Auto-resize for both textareas
         function setupAutoResize(textarea) {
             textarea.addEventListener('input', function() {
@@ -125,11 +136,10 @@
                 this.style.height = Math.min(this.scrollHeight, 280) + 'px';
             });
         }
-        
         setupAutoResize(leftInput);
         setupAutoResize(rightInput);
-        
-        // Left input (natural language to SQL)
+
+        // Left input (natural language → LLM)
         leftInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -141,7 +151,7 @@
                 }
             }
         });
-        
+
         // Right input (direct SQL)
         rightInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -157,10 +167,8 @@
 
         function sendLLMQuery(input) {
             const chat1 = document.getElementById('chat1');
-            
-            // Clear previous results and show loading
             chat1.innerHTML = '<div>Processing: ' + input + '</div>';
-            
+
             fetch('/llm-query', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -169,26 +177,25 @@
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    chat1.innerHTML = '<div style="color: red;">Error: ' + data.error + '</div>';
+                    chat1.innerHTML = '<div style="color:red;">Error: ' + data.error + '</div>';
                 } else {
-                    chat1.innerHTML = '<div><strong>Generated SQL:</strong><br>' + data.sql_query + '</div>';
-                    chat1.innerHTML += '<div><strong>Results (' + data.count + ' rows):</strong></div>';
-                    data.results.forEach(row => {
-                        chat1.innerHTML += '<div>' + JSON.stringify(row) + '</div>';
-                    });
+                    chat1.innerHTML = `
+                        <div><strong>Generated SQL:</strong><br>${data.sql_query}</div>
+                        <hr>
+                        <div><strong>Results (${data.count} rows):</strong></div>
+                        <pre>${data.results}</pre>
+                    `;
                 }
             })
             .catch(error => {
-                chat1.innerHTML = '<div style="color: red;">Error: ' + error + '</div>';
+                chat1.innerHTML = '<div style="color:red;">Error: ' + error + '</div>';
             });
         }
 
         function sendQuery(query) {
             const chat2 = document.getElementById('chat2');
-            
-            // Clear previous results and show loading
             chat2.innerHTML = '<div>Executing: ' + query + '</div>';
-            
+
             fetch('/query', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -197,16 +204,16 @@
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    chat2.innerHTML = '<div style="color: red;">Error: ' + data.error + '</div>';
+                    chat2.innerHTML = '<div style="color:red;">Error: ' + data.error + '</div>';
                 } else {
-                    chat2.innerHTML = '<div>Results (' + data.count + ' rows):</div>';
+                    chat2.innerHTML = '<div><strong>Results (' + data.count + ' rows):</strong></div>';
                     data.results.forEach(row => {
                         chat2.innerHTML += '<div>' + JSON.stringify(row) + '</div>';
                     });
                 }
             })
             .catch(error => {
-                chat2.innerHTML = '<div style="color: red;">Error: ' + error + '</div>';
+                chat2.innerHTML = '<div style="color:red;">Error: ' + error + '</div>';
             });
         }
     </script>

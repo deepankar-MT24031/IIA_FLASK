@@ -1,7 +1,8 @@
 import google.generativeai as genai
-from system_prompt import system_prompt_5
+from system_prompt_two import system_prompt_2
+import re
 
-def generate_sql_query(user_input):
+def generate_sql_query(user_input, system_prompt):
     """
     Generate SQL query from natural language input using Google Gemini.
     
@@ -13,18 +14,28 @@ def generate_sql_query(user_input):
     """
     try:
         # Configure API key
-        genai.configure(api_key="")
+        genai.configure(api_key="AIzaSyCkmyeeZ969PKXvvYLPKxiw7I-8hKcrc_U")
         
         # Initialize the model with system instruction
         model = genai.GenerativeModel(
             model_name="models/gemini-2.0-flash",
-            system_instruction=system_prompt_5
+            system_instruction=system_prompt
         )
         
         # Generate SQL query from user input
         response = model.generate_content(user_input)
+
+        # Extract the text content
+        text = response.text
+
+        # Remove markdown code fences (```json ... ```)
+        clean_text = re.sub(r"^```(?:json)?", "", text.strip(), flags=re.IGNORECASE)
+        clean_text = re.sub(r"```$", "", clean_text.strip())
+
+        #print("response.text:", response.text)
+        #print("clean text:", clean_text)
         
-        return response.text
+        return clean_text
         
     except Exception as e:
         print(f"LLM Error: {e}")
