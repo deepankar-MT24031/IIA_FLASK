@@ -1,16 +1,95 @@
+# import psycopg2
+#
+#
+# def execute_query(query):
+#     """
+#     Execute a SQL query and return results as list of dictionaries.
+#
+#     Args:
+#         query (str): SQL query to execute
+#
+#     Returns:
+#         list[dict]: Query results, where each row is a dict with column names as keys.
+#                     Returns None if an error occurs.
+#     """
+#     # Database credentials
+#     HOST = "localhost"
+#     PORT = 8002
+#     DATABASE = "postgres"
+#     USER = "postgres"
+#     PASSWORD = "postgres"
+#
+#     connection = None
+#     cursor = None
+#
+#     try:
+#         # Connect to database
+#         connection = psycopg2.connect(
+#             host=HOST,
+#             port=PORT,
+#             database=DATABASE,
+#             user=USER,
+#             password=PASSWORD
+#         )
+#
+#         # Create cursor
+#         cursor = connection.cursor()
+#
+#         # Execute the query
+#         cursor.execute(query)
+#
+#         # Fetch column names from cursor description
+#         column_names = [desc[0] for desc in cursor.description]
+#
+#         # Fetch all rows and convert them into list of dicts
+#         rows = cursor.fetchall()
+#         results = [dict(zip(column_names, row)) for row in rows]
+#
+#         return results
+#
+#     except psycopg2.Error as e:
+#         print(f"Database error: {e}")
+#         return None
+#
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         return None
+#
+#     finally:
+#         # Always close the cursor and connection
+#         if cursor:
+#             cursor.close()
+#         if connection:
+#             connection.close()
+#
+#
+# # Example usage (for testing only)
+# if __name__ == "__main__":
+#     query = "SELECT table_schema, table_name FROM information_schema.tables LIMIT 5;"
+#     results = execute_query(query)
+#
+#     if results:
+#         print(f"Query executed successfully. Found {len(results)} rows.")
+#         for row in results:
+#             print(row)
+#     else:
+#         print("No results or error occurred.")
+
+
+
 import psycopg2
 
 
 def execute_query(query):
     """
-    Execute a SQL query and return results as list of dictionaries.
+    Execute a SQL query and return results as a list of dictionaries.
 
     Args:
         query (str): SQL query to execute
 
     Returns:
-        list[dict]: Query results, where each row is a dict with column names as keys.
-                    Returns None if an error occurs.
+        list[dict]: Query results (each row as dict).
+                    Returns empty list [] if an error occurs or no rows are returned.
     """
     # Database credentials
     HOST = "localhost"
@@ -32,45 +111,49 @@ def execute_query(query):
             password=PASSWORD
         )
 
-        # Create cursor
         cursor = connection.cursor()
 
-        # Execute the query
+        # Try executing the query
         cursor.execute(query)
 
-        # Fetch column names from cursor description
+        # Some queries (INSERT/UPDATE/DELETE) don’t return rows
+        if cursor.description is None:
+            connection.commit()
+            return []
+
+        # Fetch column names and rows
         column_names = [desc[0] for desc in cursor.description]
-
-        # Fetch all rows and convert them into list of dicts
         rows = cursor.fetchall()
-        results = [dict(zip(column_names, row)) for row in rows]
 
-        return results
+        return [dict(zip(column_names, row)) for row in rows]
 
     except psycopg2.Error as e:
-        print(f"Database error: {e}")
-        return None
+        # Specific database error (e.g. syntax error, invalid column)
+        print(f"Database error: {e.pgerror.strip() if e.pgerror else e}")
+        return []
 
     except Exception as e:
-        print(f"Error: {e}")
-        return None
+        # Catch-all for any other errors
+        print(f"Unexpected error: {e}")
+        return []
 
     finally:
-        # Always close the cursor and connection
+        # Ensure resources are closed properly
         if cursor:
             cursor.close()
         if connection:
             connection.close()
 
 
-# Example usage (for testing only)
+# Example usage
 if __name__ == "__main__":
-    query = "SELECT table_schema, table_name FROM information_schema.tables LIMIT 5;"
-    results = execute_query(query)
+    test_queries = [
+        "SELECT table_schema, table_name FROM information_schema.tables LIMIT 5;",
+        "SELECT * FROM non_existent_table;",  # invalid table
+        "INSERT INTO dummy_table VALUES (1);"  # non-select query
+    ]
 
-    if results:
-        print(f"Query executed successfully. Found {len(results)} rows.")
-        for row in results:
-            print(row)
-    else:
-        print("No results or error occurred.")
+    for q in test_queries:
+        print(f"\nRunning query: {q}")
+        results = execute_query(q)
+        print("Results:", results)

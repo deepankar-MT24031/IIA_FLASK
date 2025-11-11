@@ -139,7 +139,7 @@ Output:
   "database_needed": true,
   "sufficient": false,
   "sql_query": "SELECT c.title FROM global_views.global_content c JOIN global_views.global_cast gc ON c.content_global_id = gc.content_global_id WHERE gc.role ILIKE '%James Bond%' AND c.content_type = 'tv' LIMIT 10;",
-  "fields_expected_from_db": ["content_global_id","title","role","content_type","source_schema"],
+  "fields_expected_from_db": ["title","role","content_type","source_schema"],
   "web_search_needed": false,
   "web_fields_needed": [],
   "very_large_result": false,
@@ -154,8 +154,8 @@ Output:
 {
   "database_needed": true,
   "sufficient": true,
-  "sql_query": "SELECT c.director_name FROM global_views.global_content c WHERE c.title ILIKE '%Wolf of Wall Street%' AND c.content_type = 'movie' LIMIT 10;",
-  "fields_expected_from_db": ["director_name"],
+  "sql_query": "SELECT c.title,c.director_name FROM global_views.global_content c WHERE c.title ILIKE '%Wolf of Wall Street%' AND c.content_type = 'movie' LIMIT 10;",
+  "fields_expected_from_db": ["title","director_name"],
   "web_search_needed": false,
   "web_fields_needed": [],
   "very_large_result": false,
@@ -186,7 +186,7 @@ Output:
 {
   "database_needed": true,
   "sufficient": true,
-  "sql_query": "SELECT c.title FROM global_views.global_content c WHERE NULLIF(regexp_replace(SUBSTR(c.release_date,1,4),'[^0-9]','','g'),'')::int BETWEEN 2000 AND 2010 AND c.content_type = 'movie' LIMIT 10;",
+  "sql_query": "SELECT c.title,c.release_date FROM global_views.global_content c WHERE NULLIF(regexp_replace(SUBSTR(c.release_date,1,4),'[^0-9]','','g'),'')::int BETWEEN 2000 AND 2010 AND c.content_type = 'movie' LIMIT 10;",
   "fields_expected_from_db": ["title"],
   "web_search_needed": false,
   "web_fields_needed": [],
@@ -252,7 +252,7 @@ Output:
   "web_search_needed": true,
   "web_fields_needed": ["title","release_date","awards_won"],
   "very_large_result": false,
-  "notes": "Fetch TV Series with genre as drama released  after 2010 with their repective number of awards won."
+  "notes": "Fetch TV Series with genre as drama released  after 2010 with their respective number of awards won."
 }
 #############################################################
 
@@ -304,7 +304,7 @@ Ouput:
 
 ###########################################################
 
-User: 20 lowest rated tv series with the genre Drama  
+User: 20 lowest rated tv series with the genre Drama
 Ouput:
 {
   "database_needed": true,
@@ -350,6 +350,25 @@ Output:
   "very_large_result": true,
   "notes": "List of movies and tv series released after 2000 available on Netflix."
 }
+
+###########################################################
+
+User: give me the top 5 directors who have done most number of movies and tv series , mention the count of each as well
+
+Output:
+
+{
+  "database_needed": true,
+  "sufficient": true,
+  "sql_query": "SELECT director_name, SUM(CASE WHEN content_type = 'movie' THEN 1 ELSE 0 END) AS movie_count, SUM(CASE WHEN content_type = 'tv' THEN 1 ELSE 0 END) AS tv_count, COUNT(*) AS total_count FROM global_views.global_content WHERE director_name IS NOT NULL GROUP BY director_name ORDER BY total_count DESC LIMIT 5;",
+  "fields_expected_from_db": ["director_name", "movie_count", "tv_count","total_count"],
+  "web_search_needed": false,
+  "web_fields_needed": [],
+  "very_large_result": false,
+  "notes": ""
+}
+
+
 
 
 

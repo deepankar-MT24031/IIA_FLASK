@@ -1,9 +1,14 @@
 from flask import Flask, render_template, request, jsonify
 from global_view_sql_query import execute_query
-from llm_backend import generate_sql_query
+
 from system_prompt_one import system_prompt_1
 from system_prompt_two import system_prompt_2
+from system_prompt_three import system_prompt_3
 from intersection_csv import find_csv_intersection_from_strings
+
+
+# from llm_backend import generate_sql_query
+from nvidia import generate_sql_query
 
 import json
 import re
@@ -134,7 +139,7 @@ def run_llm_query():
 
 
     # ---------------- STEP 2: Get JSON plan from LLM ----------------
-    llm_plan = generate_sql_query(user_input, system_prompt_1)
+    llm_plan = generate_sql_query(user_input, system_prompt_1,1)
     print(":::::::::::::::::Raw JSON :::::::::::", llm_plan)
 
     # Clean and parse JSON if returned as text
@@ -188,6 +193,11 @@ def run_llm_query():
             print(csv_output)
 
 
+    if(sufficient == True) and (database_needed == True) and (csv_output == ""):
+        print(":::::: SUFFICIENT IS TRUE BUT DATABASE RETURNED EMPTY :::::::::")
+        return when_sufficient_is_returning_empty_query_result(user_input)
+
+
 
     # ---------------- STEP 5: If sufficient = True → Return DB CSV directly ----------------
     if sufficient:
@@ -222,7 +232,12 @@ def run_llm_query():
 
 
         # The handler returns JSON — you forward it directly
-        return intersection
+        return jsonify({
+            'sql_query': sql_query,
+            'plan': llm_plan,
+            'results': intersection,   # CSV string
+            'count': len(results)
+        })
 
 
 
@@ -248,7 +263,7 @@ web_fields_needed: {json.dumps(web_fields)}"""
 
     # Call the LLM with the combined prompt
     try:
-        enriched_csv = generate_sql_query(user_prompt, system_prompt_2)  # system_prompt_2 handled externally
+        enriched_csv = generate_sql_query(user_prompt, system_prompt_2,2)  # system_prompt_2 handled externally
     except Exception as e:
         return {
             "error": f"Enrichment LLM call failed: {str(e)}"
@@ -279,7 +294,56 @@ web_fields_needed: {json.dumps(web_fields)}"""
         },
         "results": clean_csv,
         "count": clean_csv.count('\n') - 1,
-        "note": "Sufficient=false handled by System Prompt-2 enrichment."
+        "note": "Sufficient=false handled by System Prompt-3 enrichment."
+    }
+
+def when_sufficient_is_returning_empty_query_result(user_input):
+    """
+    Handles insufficient queries using only the LLM plan.
+    - Builds a new user prompt from 'notes' and 'web_fields_needed'
+    - Calls the LLM again with the externally provided system prompt
+    - Returns a structured JSON with CSV results
+    """
+
+    print("Enrichment handler triggered (System Prompt-3).")
+
+    # Extract fields from plan
+    # notes = llm_plan.get("notes", "")
+    # web_fields = llm_plan.get("web_fields_needed", [])
+
+    # Build user prompt dynamically
+#     user_prompt = f"""note: {notes}
+# web_fields_needed: {json.dumps(web_fields)}"""
+
+    # print("Generated user prompt for enrichment:\n", user_prompt)
+
+    # Call the LLM with the combined prompt
+    try:
+        enriched_csv = generate_sql_query(user_input, system_prompt_3,3)  # system_prompt_2 handled externally
+    except Exception as e:
+        return {
+            "error": f"Enrichment LLM call failed: {str(e)}"
+        }
+
+    # Clean the LLM's CSV output
+    if isinstance(enriched_csv, str):
+        clean_csv = re.sub(r"^```(?:csv|json)?", "", enriched_csv.strip(), flags=re.IGNORECASE)
+        clean_csv = re.sub(r"```$", "", clean_csv.strip())
+    else:
+        clean_csv = str(enriched_csv)
+
+    print(":::::::::: LLM SYSTEM PROMPT NEEDED = True::::::::::::::OUTPUT")
+    print("Enriched CSV output preview:\n", clean_csv)
+
+    # Return unified JSON response
+    return {
+        "plan": {
+            "web_fields_needed": "",
+            "notes": ""
+        },
+        "results": clean_csv,
+        "count": clean_csv.count('\n') - 1,
+        "note": "Sufficient=false handled by System Prompt-3 enrichment."
     }
 
 if __name__ == '__main__':
