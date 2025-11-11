@@ -17,7 +17,7 @@ def generate_sql_query(user_input, system_prompt,system_prompt_number):
         # ✅ Initialize NVIDIA-compatible OpenAI client
         client = OpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
-            api_key="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"
+            api_key=""
         )
 
         # ✅ Send both system + user prompts
