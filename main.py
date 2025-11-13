@@ -128,7 +128,9 @@ def run_llm_query():
     # ---------------- STEP 5: If sufficient = True → Return DB CSV directly ----------------
     if (sufficient == False) and (database_needed == True):
 
-        enriched_response = handle_insufficient_case(csv_output,llm_plan)
+        lines = csv_output.strip().split("\n")
+        top25_csv = "\n".join(lines[:26])
+        enriched_response = handle_insufficient_case(top25_csv,llm_plan)
 
 
         # The handler returns JSON — you forward it directly
