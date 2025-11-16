@@ -14,7 +14,7 @@ def generate_sql_query(user_input, system_prompt, system_prompt_number):
     """
     try:
         # Configure API key
-        genai.configure(api_key="")
+        genai.configure(api_key="AIzaSyBfesS0nbMS-1iXPxdGwq3PuDLsCDpORac")
 
         if system_prompt_number == 3:
             # Initialize the model with system instruction

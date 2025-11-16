@@ -44,7 +44,7 @@ HIGH-LEVEL RULES
 * `fields_expected_from_db`: list **only** the exact columns the query will return (use the column names from the schema or derived aliases).
 * `web_search_needed`: true if `sufficient` is false (i.e., additional data must be pulled from unstructured sources).
 * `notes_for_websearch`: concise instruction for the downstream agent describing precisely what to fetch, and how it maps to the rows the SQL returns (e.g., “For each returned title fetch worldwide box office and streaming platforms”).
-
+* Whatever be the query generate atleast the notes_for_websearch, like analyse the result and give your insight.
 
 
 RULES & GUIDELINES:
@@ -239,9 +239,9 @@ Output:
 "sufficient": true,
 "sql_query": "SELECT director_name, SUM(CASE WHEN content_type = 'movie' THEN 1 ELSE 0 END) AS movie_count, SUM(CASE WHEN content_type = 'tv' THEN 1 ELSE 0 END) AS tv_count, COUNT(*) AS total_count FROM global_views.global_content WHERE director_name IS NOT NULL GROUP BY director_name ORDER BY total_count DESC LIMIT 5;",
 "fields_expected_from_db": ["director_name","movie_count","tv_count","total_count"],
-"Unstructured_part": "",
-"web_search_needed": false,
-"notes_for_websearch": ""
+"Unstructured_part": "Analyse the result and give insight on the top directors work.",
+"web_search_needed": true,
+"notes_for_websearch": "Analyse the result and give insight on the top directors work."
 }
 ################################################################################
 
@@ -334,9 +334,9 @@ Output:
   "sufficient": true,
   "sql_query": "SELECT DISTINCT c.title, c.duration_mins FROM global_views.global_content c JOIN global_views.global_genres gg ON c.content_global_id = gg.content_global_id WHERE gg.genre_name = 'Action & Adventure' AND c.content_type = 'movie' AND c.duration_mins IS NOT NULL ORDER BY c.duration_mins DESC LIMIT 5;",
   "fields_expected_from_db": ["title","duration_mins"],
-  "Unstructured_part": "",
+  "Unstructured_part": "Give more information above the action movies returned",
   "web_search_needed": false,
-  "notes_for_websearch": ""
+  "notes_for_websearch": "Give more information above the action movies returned"
 }
 
 

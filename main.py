@@ -7,8 +7,8 @@ from system_prompt_three import system_prompt_3
 from intersection_csv import find_csv_intersection_from_strings
 
 
-# from llm_backend import generate_sql_query
-from nvidia import generate_sql_query
+from llm_backend import generate_sql_query
+# from nvidia import generate_sql_query
 
 import json
 import re
@@ -115,19 +115,20 @@ def run_llm_query():
             "count": len(results)
         })
 
-    if (sufficient == True) and (database_needed == True) :
-        print(":::::: SUFFICIENT IS TRUE BUT DATABASE RETURNED NON EMPTY :::::::::\n\n\n")
+    # if (sufficient == True) and (database_needed == True) :
+    #     print(":::::: SUFFICIENT IS TRUE BUT DATABASE RETURNED NON EMPTY :::::::::\n\n\n")
+    #
+    #     return jsonify({
+    #         "sql_query": sql_query,
+    #         "csv_output": csv_output,  # Always CSV (even empty)
+    #         "llm_explanation": " ",  # Filled only when insufficient
+    #         "count": len(results)
+    #     })
 
-        return jsonify({
-            "sql_query": sql_query,
-            "csv_output": csv_output,  # Always CSV (even empty)
-            "llm_explanation": " ",  # Filled only when insufficient
-            "count": len(results)
-        })
+    # ---------------- STEP 5:
+    # if (sufficient == False) and (database_needed == True):
 
-    # ---------------- STEP 5: If sufficient = True → Return DB CSV directly ----------------
-    if (sufficient == False) and (database_needed == True):
-
+    if (database_needed == True):
         lines = csv_output.strip().split("\n")
         top25_csv = "\n".join(lines[:26])
         enriched_response = handle_insufficient_case(top25_csv,llm_plan)
